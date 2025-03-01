@@ -35,7 +35,13 @@ extension ReviewsViewModel {
     func getReviews() {
         guard state.shouldLoad else { return }
         state.shouldLoad = false
-        reviewsProvider.getReviews(offset: state.offset, completion: gotReviews)
+        DispatchQueue.global().async { [weak self] in
+            guard let self = self else { return }
+            reviewsProvider.getReviews(offset: state.offset, completion: { [weak self] in
+                self?.gotReviews($0)
+            })
+        }
+        
     }
 
 }
@@ -52,10 +58,17 @@ private extension ReviewsViewModel {
             state.items += reviews.items.map(makeReviewItem)
             state.offset += state.limit
             state.shouldLoad = state.offset < reviews.count
+            if !state.shouldLoad {
+                state.items.append(makeFooterItem(reviews.count))
+            }
         } catch {
             state.shouldLoad = true
         }
-        onStateChange?(state)
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            onStateChange?(state)
+        }
+        
     }
 
     /// Метод, вызываемый при нажатии на кнопку "Показать полностью...".
@@ -77,18 +90,28 @@ private extension ReviewsViewModel {
 private extension ReviewsViewModel {
 
     typealias ReviewItem = ReviewCellConfig
-
+    typealias FooterItem = FooterCellConfig
+    
     func makeReviewItem(_ review: Review) -> ReviewItem {
+        let usernameText = "\(review.firstName) \(review.lastName)".attributed(font: .username)
         let reviewText = review.text.attributed(font: .text)
         let created = review.created.attributed(font: .created, color: .created)
         let item = ReviewItem(
+            usernameText: usernameText,
+            ratingImage: ratingRenderer.ratingImage(review.rating),
+            photos: [UIImage(named: "IMG_0001")!],
             reviewText: reviewText,
             created: created,
-            onTapShowMore: showMoreReview
+            onTapShowMore: { [weak self] in
+                self?.showMoreReview(with: $0)
+            }
         )
         return item
     }
 
+    func makeFooterItem(_ count: Int) -> FooterItem {
+        FooterItem(reviewCount: count)
+    }
 }
 
 // MARK: - UITableViewDataSource
@@ -108,6 +131,7 @@ extension ReviewsViewModel: UITableViewDataSource {
 
 }
 
+
 // MARK: - UITableViewDelegate
 
 extension ReviewsViewModel: UITableViewDelegate {
@@ -115,7 +139,7 @@ extension ReviewsViewModel: UITableViewDelegate {
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         state.items[indexPath.row].height(with: tableView.bounds.size)
     }
-
+    
     /// Метод дозапрашивает отзывы, если до конца списка отзывов осталось два с половиной экрана по высоте.
     func scrollViewWillEndDragging(
         _ scrollView: UIScrollView,
