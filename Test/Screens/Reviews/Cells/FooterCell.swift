@@ -42,6 +42,15 @@ extension FooterCellConfig: TableCellConfig {
         layout.height(config: self, maxWidth: size.width)
     }
 
+    func isEqual(to item: TableCellConfig) -> Bool {
+        guard let item = item as? FooterCellConfig else { return false }
+        
+        return self.id == item.id
+    }
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(self.id)
+    }
 }
 // MARK: - Private
 private extension FooterCellConfig {

@@ -35,6 +35,7 @@ private extension ReviewsView {
         tableView.allowsSelection = false
         tableView.register(ReviewCell.self, forCellReuseIdentifier: ReviewCellConfig.reuseId)
         tableView.register(FooterCell.self, forCellReuseIdentifier: FooterCellConfig.reuseId)
+        tableView.register(LoaderCell.self, forCellReuseIdentifier: LoaderCellConfig.reuseId)
     }
     
 }

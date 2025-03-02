@@ -8,12 +8,16 @@ struct ReviewCellConfig {
 
     /// Идентификатор конфигурации. Можно использовать для поиска конфигурации в массиве.
     let id = UUID()
+    /// Объект для загрузки изображений.
+    var imageLoader: ImageLoader
+    /// Url аватарки пользователя.
+    let avatarUrl: String
     /// Текст имени пользователя.
     let usernameText: NSAttributedString
     /// Рейтинг.
     let ratingImage: UIImage
     /// Фото в отзыве.
-    let photos: [UIImage]
+    let photoUrls: [String]
     /// Текст отзыва.
     let reviewText: NSAttributedString
     /// Максимальное отображаемое количество строк текста. По умолчанию 3.
@@ -42,6 +46,14 @@ extension ReviewCellConfig: TableCellConfig {
         cell.reviewTextLabel.numberOfLines = maxLines
         cell.createdLabel.attributedText = created
         cell.config = self
+        cell.avatarImageView.image = Config.avatarImage
+        /// Проверка на то, что ячейке присваивается ее картинка.
+        let url = avatarUrl
+        imageLoader.load(by: avatarUrl) { image in
+            if url == avatarUrl {
+                cell.avatarImageView.image = image
+            }
+        }
     }
 
     /// Метод, возвращаюший высоту ячейки с данным ограничением по размеру.
@@ -49,9 +61,18 @@ extension ReviewCellConfig: TableCellConfig {
     func height(with size: CGSize) -> CGFloat {
         layout.height(config: self, maxWidth: size.width)
     }
-
+    
+    func isEqual(to item: TableCellConfig) -> Bool {
+        guard let item = item as? ReviewCellConfig else { return false }
+        
+        return self.id == item.id
+    }
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(self.id)
+    }
+    
 }
-
 // MARK: - Private
 
 private extension ReviewCellConfig {
@@ -93,12 +114,18 @@ final class ReviewCell: UITableViewCell {
         usernameLabel.frame = layout.usernameLabelFrame
         ratingImageView.frame = layout.ratingImageViewFrame
         photosCollectionView.frame = layout.photosCollectionViewFrame
-        photosCollectionView.setCollectionViewLayout(layout.photosLayout, animated: false)
+        if photosCollectionView.collectionViewLayout != layout.photosLayout {
+            photosCollectionView.setCollectionViewLayout(layout.photosLayout, animated: false)
+        }
         reviewTextLabel.frame = layout.reviewTextLabelFrame
         createdLabel.frame = layout.createdLabelFrame
         showMoreButton.frame = layout.showMoreButtonFrame
     }
-
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        avatarImageView.image = Config.avatarImage
+        photosCollectionView.reloadData()
+    }
 }
 
 // MARK: - Private
@@ -167,17 +194,26 @@ private extension ReviewCell {
 extension ReviewCell: UICollectionViewDataSource, UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         guard let config = config else { return 0 }
-        return config.photos.count
+        return config.photoUrls.count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: PhotoCell.reuseId, for: indexPath) as? PhotoCell else {
+        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: PhotoCell.reuseId, for: indexPath) as? PhotoCell,
+              let config = config else {
             return UICollectionViewCell()
         }
         cell.backgroundColor = .lightGray
         cell.layer.cornerRadius = Layout.photoCornerRadius
         cell.layer.masksToBounds = true
-        cell.photoImageView.image = config?.photos[indexPath.item]
+        
+        let url = config.photoUrls[indexPath.item]
+        config.imageLoader.load(by: config.photoUrls[indexPath.item], completion: { [weak cell] image in
+            guard let cell = cell else { return }
+            if url == config.photoUrls[indexPath.item] {
+                cell.photoImageView.image = image
+            }
+        })
+        
         return cell
     }
     
@@ -266,10 +302,10 @@ private final class ReviewCellLayout {
             size: CGSize(width: width, height: availableHeightForRating)
         )
         
-        let spacingFromRating = config.photos.isEmpty ? ratingToTextSpacing : ratingToPhotosSpacing
+        let spacingFromRating = config.photoUrls.isEmpty ? ratingToTextSpacing : ratingToPhotosSpacing
         maxY = ratingImageViewFrame.maxY + spacingFromRating
         
-        if !config.photos.isEmpty {
+        if !config.photoUrls.isEmpty {
             photosCollectionViewFrame = CGRect(
                 origin: CGPoint(x: maxX, y: maxY),
                 size: CGSize(width: width, height: Self.photoSize.height)
