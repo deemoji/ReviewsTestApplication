@@ -24,6 +24,4 @@
 
 ## Демонстрация:
 
-Минимальный вариант|Максимальный вариант
--|-
-<img src="/Screenshots/1.png" width="350"/> | <img src="/Screenshots/2.gif" width="350"/>
+<img src="/Screenshots/2.gif" width="350"/>
