@@ -27,4 +27,8 @@ final class PhotoCell: UICollectionViewCell {
         super.layoutSubviews()
         photoImageView.frame = contentView.bounds
     }
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        photoImageView.image = nil
+    }
 }

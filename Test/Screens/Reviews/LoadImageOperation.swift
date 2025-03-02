@@ -8,13 +8,14 @@
 import UIKit
 
 typealias CompletionHandler = (UIImage?) -> Void
-
+/// Класс, реализующий асинхронную операцию загрузки картинки по URL.
 final class LoadOperation: Operation {
     
     var image: UIImage?
+
+    var completionHandlers: [CompletionHandler] = []
     
     private var loadURL: URL
-    var completionHandlers: [CompletionHandler] = []
     
     init(url: URL) {
         self.loadURL = url

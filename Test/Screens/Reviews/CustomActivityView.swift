@@ -6,7 +6,7 @@
 //
 
 import UIKit
-
+/// Класс, определяющий прорисовку значка загрузки и его анимацию.
 final class CustomActivityView: UIView {
     
     private lazy var shapeLayer: CAShapeLayer = {
@@ -28,6 +28,7 @@ final class CustomActivityView: UIView {
         
         let size = min(bounds.width / 2.0, bounds.height / 2.0)
         let rect = CGRect(x: 0, y: 0, width: size, height: size)
+       
         let path = UIBezierPath(
             arcCenter: CGPoint(x: rect.midX, y: rect.midY),
             radius: 10.0,

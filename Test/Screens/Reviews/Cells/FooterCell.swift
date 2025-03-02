@@ -41,16 +41,6 @@ extension FooterCellConfig: TableCellConfig {
     func height(with size: CGSize) -> CGFloat {
         layout.height(config: self, maxWidth: size.width)
     }
-
-    func isEqual(to item: TableCellConfig) -> Bool {
-        guard let item = item as? FooterCellConfig else { return false }
-        
-        return self.id == item.id
-    }
-    
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(self.id)
-    }
 }
 // MARK: - Private
 private extension FooterCellConfig {
@@ -73,7 +63,7 @@ private extension FooterCellConfig {
     }
 }
 // MARK: - Cell
-
+/// Ячейка, отображающая количество отзывов в конце списка.
 final class FooterCell: UITableViewCell {
     
     fileprivate var config: Config?

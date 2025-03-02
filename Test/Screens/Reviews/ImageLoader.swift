@@ -21,17 +21,6 @@ final class ImageLoader {
     
     private var loadingOperations: [URL:LoadOperation] = [:]
     
-    
-    func cancelLoad(by url: String) {
-        guard let url = URL(string: url) else {
-            return
-        }
-        if let operation = loadingOperations[url] {
-            operation.cancel()
-            loadingOperations.removeValue(forKey: url)
-        }
-    }
-    
     func load(by url: String, completion:  ((UIImage?) -> ())?){
         guard let url = URL(string: url) else {
             completion?(nil)
@@ -62,6 +51,16 @@ final class ImageLoader {
         operation.completionHandlers.append(completionHandler)
         loadingOperations[url] = operation
         loadingQueue.addOperation(operation)
+    }
+    
+    func cancelLoad(by url: String) {
+        guard let url = URL(string: url) else {
+            return
+        }
+        if let operation = loadingOperations[url] {
+            operation.cancel()
+            loadingOperations.removeValue(forKey: url)
+        }
     }
     
     private func getChachedImage(_ url: URL) -> UIImage? {

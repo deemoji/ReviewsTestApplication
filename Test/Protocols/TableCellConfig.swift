@@ -15,9 +15,6 @@ protocol TableCellConfig {
     /// Вызывается из `heightForRowAt:` делегата таблицы.
     func height(with size: CGSize) -> CGFloat
     
-    func isEqual(to item: TableCellConfig) -> Bool
-
-    func hash(into hasher: inout Hasher)
 }
 
 // MARK: - Internal
@@ -32,33 +29,4 @@ extension TableCellConfig {
         Self.reuseId
     }
 
-}
-
-extension TableCellConfig where Self: Hashable {
-    func isEqual(to item: TableCellConfig) -> Bool {
-        guard let item = item as? Self else { return false }
-        return self == item
-    }
-}
-
-struct AnyTableCellConfig: TableCellConfig {
-    
-    var config: TableCellConfig
-    
-    func update(cell: UITableViewCell) {
-        config.update(cell: cell)
-    }
-    
-    func height(with size: CGSize) -> CGFloat {
-        config.height(with: size)
-    }
-}
-extension AnyTableCellConfig: Hashable {
-    public static func == (lhs: AnyTableCellConfig, rhs: AnyTableCellConfig) -> Bool {
-        return lhs.config.isEqual(to: rhs.config)
-    }
-
-    public func hash(into hasher: inout Hasher) {
-        self.config.hash(into: &hasher)
-    }
 }

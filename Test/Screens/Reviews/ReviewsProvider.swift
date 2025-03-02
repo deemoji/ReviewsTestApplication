@@ -31,7 +31,7 @@ extension ReviewsProvider {
             }
 
             // Симулируем сетевой запрос - не менять
-            usleep(.random(in: 100_000...1_000_000))
+            usleep(2_000_000)
 
             DispatchQueue.main.async {
                 do {

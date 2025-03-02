@@ -34,20 +34,10 @@ extension LoaderCellConfig: TableCellConfig {
     func height(with size: CGSize) -> CGFloat {
         layout.height(config: self, maxWidth: size.width)
     }
-
-    func isEqual(to item: TableCellConfig) -> Bool {
-        guard let item = item as? LoaderCellConfig else { return false }
-        
-        return self.id == item.id
-    }
-    
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(self.id)
-    }
 }
 
 // MARK: - Cell
-
+/// Ячейка, отображающая подгрузку отзывов.
 final class LoaderCell: UITableViewCell {
     
     fileprivate var config: Config?

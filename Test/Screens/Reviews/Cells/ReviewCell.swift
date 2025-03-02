@@ -62,16 +62,6 @@ extension ReviewCellConfig: TableCellConfig {
         layout.height(config: self, maxWidth: size.width)
     }
     
-    func isEqual(to item: TableCellConfig) -> Bool {
-        guard let item = item as? ReviewCellConfig else { return false }
-        
-        return self.id == item.id
-    }
-    
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(self.id)
-    }
-    
 }
 // MARK: - Private
 
@@ -93,7 +83,7 @@ final class ReviewCell: UITableViewCell {
     fileprivate let avatarImageView = UIImageView()
     fileprivate let usernameLabel = UILabel()
     fileprivate let ratingImageView = UIImageView()
-    fileprivate let photosCollectionView = UICollectionView(frame: .zero, collectionViewLayout: UICollectionViewLayout())
+    fileprivate let photosCollectionView = UICollectionView(frame: .zero, collectionViewLayout: Layout.makePhotosLayout())
     fileprivate let reviewTextLabel = UILabel()
     fileprivate let createdLabel = UILabel()
     fileprivate let showMoreButton = UIButton()
@@ -114,9 +104,6 @@ final class ReviewCell: UITableViewCell {
         usernameLabel.frame = layout.usernameLabelFrame
         ratingImageView.frame = layout.ratingImageViewFrame
         photosCollectionView.frame = layout.photosCollectionViewFrame
-        if photosCollectionView.collectionViewLayout != layout.photosLayout {
-            photosCollectionView.setCollectionViewLayout(layout.photosLayout, animated: false)
-        }
         reviewTextLabel.frame = layout.reviewTextLabelFrame
         createdLabel.frame = layout.createdLabelFrame
         showMoreButton.frame = layout.showMoreButtonFrame
@@ -193,7 +180,10 @@ private extension ReviewCell {
 
 extension ReviewCell: UICollectionViewDataSource, UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        guard let config = config else { return 0 }
+        guard let config = config else {
+            return 0
+            
+        }
         return config.photoUrls.count
     }
     
@@ -232,6 +222,7 @@ private final class ReviewCellLayout {
     fileprivate static let photoCornerRadius = 8.0
 
     private static let photoSize = CGSize(width: 55.0, height: 66.0)
+    private static let photosSpacing = 8.0
     private static let showMoreButtonSize = Config.showMoreText.size()
 
     // MARK: - Фреймы
@@ -244,13 +235,13 @@ private final class ReviewCellLayout {
     private(set) var showMoreButtonFrame = CGRect.zero
     private(set) var createdLabelFrame = CGRect.zero
 
-    private(set) lazy var photosLayout: UICollectionViewLayout = {
+    static func makePhotosLayout() -> UICollectionViewLayout {
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .horizontal
         layout.itemSize = Self.photoSize
-        layout.minimumLineSpacing = photosSpacing
+        layout.minimumLineSpacing = Self.photosSpacing
         return layout
-    }()
+    }
     // MARK: - Отступы
 
     /// Отступы от краёв ячейки до её содержимого.
@@ -264,8 +255,7 @@ private final class ReviewCellLayout {
     private let ratingToTextSpacing = 6.0
     /// Вертикальный отступ от вью рейтинга до фото.
     private let ratingToPhotosSpacing = 10.0
-    /// Горизонтальные отступы между фото.
-    private let photosSpacing = 8.0
+    
     /// Вертикальный отступ от фото (если они есть) до текста отзыва.
     private let photosToTextSpacing = 10.0
     /// Вертикальный отступ от текста отзыва до времени создания отзыва или кнопки "Показать полностью..." (если она есть).

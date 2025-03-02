@@ -6,13 +6,6 @@ final class ReviewsViewModel: NSObject {
     /// Замыкание, вызываемое при изменении `state`.
     var onStateChange: ((State) -> Void)?
     
-    var dataSourceCellProvider: DataSource.CellProvider = { tableView, indexPath, itemIdentifier in
-        let config = itemIdentifier.config
-        let cell = tableView.dequeueReusableCell(withIdentifier: config.reuseId, for: indexPath)
-        config.update(cell: cell)
-        return cell
-    }
-    
     private var state: State
     private let reviewsProvider: ReviewsProvider
     private let ratingRenderer: RatingRenderer
@@ -90,11 +83,11 @@ private extension ReviewsViewModel {
     /// Снимает ограничение на количество строк текста отзыва (раскрывает текст).
     func showMoreReview(with id: UUID) {
         guard
-            let index = state.items.firstIndex(where: { ($0.config as? ReviewItem)?.id == id }),
-            var item = state.items[index].config as? ReviewItem
+            let index = state.items.firstIndex(where: { ($0 as? ReviewItem)?.id == id }),
+            var item = state.items[index] as? ReviewItem
         else { return }
         item.maxLines = .zero
-        state.items[index] = AnyTableCellConfig(config: item)
+        state.items[index] = item
         onStateChange?(state)
     }
     
@@ -108,7 +101,7 @@ private extension ReviewsViewModel {
     typealias FooterItem = FooterCellConfig
     typealias LoaderItem = LoaderCellConfig
     
-    func makeReviewItem(_ review: Review) -> AnyTableCellConfig {
+    func makeReviewItem(_ review: Review) -> ReviewItem {
         let usernameText = "\(review.firstName) \(review.lastName)".attributed(font: .username)
         let reviewText = review.text.attributed(font: .text)
         let created = review.created.attributed(font: .created, color: .created)
@@ -120,27 +113,29 @@ private extension ReviewsViewModel {
             photoUrls: review.photos,
             reviewText: reviewText,
             created: created,
+            /// Здесь был захват жесткой ссылки на viewModel, который приводил к утечке памяти.
             onTapShowMore: { [weak self] in
                 self?.showMoreReview(with: $0)
             }
         )
-        return AnyTableCellConfig(config: item)
+        return item
     }
     
-    func makeFooterItem(_ count: Int) -> AnyTableCellConfig {
-        AnyTableCellConfig(config: FooterItem(reviewCount: count))
+    func makeFooterItem(_ count: Int) -> FooterItem {
+        FooterItem(reviewCount: count)
     }
     
-    func makeLoaderItem() -> AnyTableCellConfig {
-        AnyTableCellConfig(config: LoaderItem())
+    func makeLoaderItem() -> LoaderItem {
+        LoaderItem()
     }
 }
 
 // MARK: - UITableViewDataSourcePrefetching
 extension ReviewsViewModel: UITableViewDataSourcePrefetching {
+    /// Метод испульзуется для предзагрузки картинок.
     func tableView(_ tableView: UITableView, prefetchRowsAt indexPaths: [IndexPath]) {
         for indexPath in indexPaths {
-            if let config = state.items[indexPath.row].config as? ReviewCellConfig {
+            if let config = state.items[indexPath.row] as? ReviewCellConfig {
                 imageLoader.load(by: config.avatarUrl, completion: nil)
                 for photoUrl in config.photoUrls {
                     imageLoader.load(by: photoUrl, completion: nil)
@@ -148,10 +143,10 @@ extension ReviewsViewModel: UITableViewDataSourcePrefetching {
             }
         }
     }
-    
+    /// Метод используется для отмени загрузки, если tableView ячейки были пролистаны.
     func tableView(_ tableView: UITableView, cancelPrefetchingForRowsAt indexPaths: [IndexPath]) {
         for indexPath in indexPaths {
-            if let config = state.items[indexPath.row].config as? ReviewCellConfig {
+            if let config = state.items[indexPath.row] as? ReviewCellConfig {
                 imageLoader.cancelLoad(by: config.avatarUrl)
                 for photoUrl in config.photoUrls {
                     imageLoader.cancelLoad(by: photoUrl)
@@ -160,8 +155,24 @@ extension ReviewsViewModel: UITableViewDataSourcePrefetching {
         }
     }
 }
+// MARK: - UITableViewDataSource
+extension ReviewsViewModel: UITableViewDataSource {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return state.items.count
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let config = state.items[indexPath.row]
+        let cell = tableView.dequeueReusableCell(withIdentifier: config.reuseId, for: indexPath)
+        config.update(cell: cell)
+        return cell
+    }
+    
+    
+}
 
 // MARK: - UITableViewDelegate
+
 
 extension ReviewsViewModel: UITableViewDelegate {
     
